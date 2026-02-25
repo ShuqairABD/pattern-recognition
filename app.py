@@ -1165,9 +1165,24 @@ def ai_analyse(n_clicks, figure, api_key, model, lang,
                symbol, tf_name, tf_small_name, position_text,
                preset_mode, system_preset, custom_question):
     if not api_key or len(api_key) < 10:
-        return "No API key entered", "danger"
+        return "❌ No API key entered", "danger"
     if figure is None:
-        return "Run chart analysis first", "warning"
+        return "❌ Run chart analysis first (press Analyse button)", "warning"
+    try:
+        return _ai_analyse_inner(
+            figure, api_key, model, lang,
+            symbol, tf_name, tf_small_name, position_text,
+            preset_mode, system_preset, custom_question
+        )
+    except Exception as fatal_err:
+        import traceback
+        tb = traceback.format_exc()
+        return f"❌ Fatal error:\n{str(fatal_err)}\n\n{tb[:800]}", "danger"
+
+
+def _ai_analyse_inner(figure, api_key, model, lang,
+                      symbol, tf_name, tf_small_name, position_text,
+                      preset_mode, system_preset, custom_question):
 
     tf_big,   period_big   = TF_BIG_OPTIONS.get(tf_name,   ("1d","2y"))
     tf_small, period_small = TF_SMALL_OPTIONS.get(tf_small_name, ("1h","14d"))
@@ -1181,7 +1196,9 @@ def ai_analyse(n_clicks, figure, api_key, model, lang,
     model = model_id  # use clean model id for API call
 
     # 1. Chart -> PNG base64
+    # On cloud servers (Render etc.) kaleido needs chromium — skip if unavailable
     img_content = []
+    vision_status = "no"
     if is_vision:
         try:
             import plotly.io as pio
@@ -1190,9 +1207,11 @@ def ai_analyse(n_clicks, figure, api_key, model, lang,
             img_b64 = base64.b64encode(img_bytes).decode("utf-8")
             img_content = [{"type":"image_url",
                             "image_url":{"url":f"data:image/png;base64,{img_b64}"}}]
-        except Exception:
+            vision_status = "yes"
+        except Exception as kaleido_err:
             img_content = []
             is_vision = False
+            vision_status = f"no (kaleido: {str(kaleido_err)[:60]})"
 
     # 2. Extract annotations from chart
     annot_lines = []
@@ -1412,7 +1431,7 @@ def ai_analyse(n_clicks, figure, api_key, model, lang,
                 html.Span(f"  |  {mode_label}  |  {style_label}",
                           className="text-success",
                           style={"fontSize":"11px"}),
-                html.Span(f"  |  vision={'yes' if is_vision else 'no'}",
+                html.Span(f"  |  vision={vision_status}",
                           className="text-secondary", style={"fontSize":"11px"}),
             ], className="mb-2 pb-1 border-bottom border-secondary",
                style={"direction":"ltr"}),
