@@ -70,6 +70,8 @@ TF_BIG_OPTIONS = {
 # Small TF options: label → (interval, period)
 # Periods chosen to give ~300-500 bars for pattern detection
 TF_SMALL_OPTIONS = {
+    "1 Week":   ("1wk", "3y"),
+    "1 Day":    ("1d",  "1y"),
     "4 Hours":  ("4h",  "90d"),
     "1 Hour":   ("1h",  "30d"),
     "15 Min":   ("15m", "14d"),
@@ -79,11 +81,13 @@ TF_SMALL_OPTIONS = {
 
 # Default small TF for each big TF (auto-suggest, user can override)
 TF_DEFAULT_SMALL = {
-    "1 Day":   "4 Hours",
-    "4 Hours": "1 Hour",
-    "1 Hour":  "15 Min",
-    "15 Min":  "5 Min",
-    "5 Min":   "1 Min",
+    "1 Month":  "1 Week",
+    "1 Week":   "1 Day",
+    "1 Day":    "4 Hours",
+    "4 Hours":  "1 Hour",
+    "1 Hour":   "15 Min",
+    "15 Min":   "5 Min",
+    "5 Min":    "1 Min",
 }
 
 # Keep for backward compat in places that need (tf_big, period_big, tf_small, period_small)
@@ -96,6 +100,8 @@ TF_OPTIONS = {
 }
 
 TF_PARAMS = {
+    "1mo": dict(smooth_window=7,  min_ext_dist=3, lambda1=0.82, lambda2=0.68, quality_thresh=0.52),
+    "1wk": dict(smooth_window=9,  min_ext_dist=4, lambda1=0.81, lambda2=0.67, quality_thresh=0.51),
     "1d":  dict(smooth_window=13, min_ext_dist=5, lambda1=0.80, lambda2=0.65, quality_thresh=0.50),
     "4h":  dict(smooth_window=12, min_ext_dist=4, lambda1=0.78, lambda2=0.62, quality_thresh=0.47),
     "1h":  dict(smooth_window=11, min_ext_dist=4, lambda1=0.75, lambda2=0.60, quality_thresh=0.45),
@@ -109,9 +115,11 @@ TF_MINUTES = {
     "1m":   1,
     "5m":   5,
     "15m":  15,
-    "4h":   240,
     "1h":   60,
+    "4h":   240,
     "1d":   1440,
+    "1wk":  10080,
+    "1mo":  43200,
 }
 
 PHASE_COLORS = {1:"#00B4D8", 2:"#FFB703", 3:"#06D6A0", 0:"#888"}
@@ -1109,6 +1117,16 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
         xanchor="right",yanchor="top",text=f"<b>{lbl_f} | {stab}</b>",
         showarrow=False,bgcolor="#1A1A2E",bordercolor="#4361EE",borderwidth=1,
         font=dict(size=10,color="#E0E0FF"))
+
+    # Small TF self-similarity coefficient (small vs small waves)
+    frac_s = sb.fractal.self_similarity(rs["waves"], rs["waves"])
+    coeff_s = frac_s["coefficient"]
+    stab_s  = "Stable ✅" if frac_s["stable"] else "Unstable ⚠️"
+    lbl_s   = f"Small TF coeff = {coeff_s:.4f}" if coeff_s else "Small TF: not enough waves"
+    fig.add_annotation(xref="x3 domain",yref="y3 domain",x=0.01,y=0.95,
+        xanchor="left",yanchor="top",text=f"<b>{lbl_s} | {stab_s}</b>",
+        showarrow=False,bgcolor="#1A1A2E",bordercolor="#F72585",borderwidth=1,
+        font=dict(size=10,color="#F72585"))
 
     fig.update_layout(template="plotly_dark",height=960,barmode="group",
         paper_bgcolor="#1A1A2E",plot_bgcolor="#1A1A2E",
