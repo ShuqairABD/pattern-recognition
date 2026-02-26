@@ -60,6 +60,8 @@ for _g in INSTRUMENT_GROUPS.values():
 
 # Big TF options: label → (interval, period)
 TF_BIG_OPTIONS = {
+    "1 Month":  ("1mo", "10y"),
+    "1 Week":   ("1wk", "5y"),
     "1 Day":    ("1d",  "2y"),
     "4 Hours":  ("4h",  "60d"),
     "1 Hour":   ("1h",  "30d"),
