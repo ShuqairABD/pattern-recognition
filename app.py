@@ -1037,8 +1037,15 @@ def _add_layer(fig, row, prices, res, tf):
 
 
 def _load(symbol, period, interval):
-    # no_cache=True ensures fresh data every request
-    df=yf.download(symbol,period=period,interval=interval,auto_adjust=True,progress=False,no_cache=True)
+    # Clear yfinance cache to always get fresh data
+    try:
+        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "py-yfinance")
+        if os.path.exists(cache_dir):
+            import shutil
+            shutil.rmtree(cache_dir)
+    except Exception:
+        pass
+    df=yf.download(symbol,period=period,interval=interval,auto_adjust=True,progress=False)
     if df.empty:
         raise ValueError(f"No data: {symbol} {interval}")
     if hasattr(df.columns,"levels"):
