@@ -1037,23 +1037,29 @@ def _add_layer(fig, row, prices, res, tf):
 
 
 def _load(symbol, period, interval):
-    # Clear yfinance cache to always get fresh data
-    try:
-        cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "py-yfinance")
-        if os.path.exists(cache_dir):
-            import shutil
-            shutil.rmtree(cache_dir)
-    except Exception:
-        pass
-    df=yf.download(symbol,period=period,interval=interval,auto_adjust=True,progress=False)
-    if df.empty:
-        raise ValueError(f"No data: {symbol} {interval}")
-    if hasattr(df.columns,"levels"):
-        df.columns=[c[0] if isinstance(c,tuple) else c for c in df.columns]
-    prices=df["Close"].dropna().values.flatten().astype(float)
-    if len(prices)<20:
-        raise ValueError(f"Too few bars: {len(prices)}")
-    return prices
+    # Retry up to 3 times — Yahoo Finance sometimes blocks first request from server
+    import time
+    last_err = None
+    for attempt in range(3):
+        try:
+            if attempt > 0:
+                time.sleep(2 * attempt)  # wait 2s, 4s before retries
+            ticker = yf.Ticker(symbol)
+            df = ticker.history(period=period, interval=interval, auto_adjust=True)
+            if df.empty:
+                last_err = f"No data: {symbol} {interval} (attempt {attempt+1})"
+                continue
+            if hasattr(df.columns, "levels"):
+                df.columns = [c[0] if isinstance(c, tuple) else c for c in df.columns]
+            prices = df["Close"].dropna().values.flatten().astype(float)
+            if len(prices) < 20:
+                last_err = f"Too few bars: {len(prices)}"
+                continue
+            return prices
+        except Exception as e:
+            last_err = str(e)
+            continue
+    raise ValueError(last_err or f"No data: {symbol} {interval}")
 
 
 def _error_fig(msg):
