@@ -378,11 +378,9 @@ app.layout = dbc.Container([
                     value="1 Hour", inline=True, className="text-light small"),
             ], width=5),
             dbc.Col([
-                html.Label(id="lbl-boxmode", children="Box Mode", className="text-warning fw-bold mb-1"),
-                dbc.RadioItems(id="box-mode",
-                    options=[{"label":"⏱ By Time","value":"time"},
-                             {"label":"📐 By Pattern","value":"pattern"}],
-                    value="time", inline=True, className="text-light small"),
+                # Box Mode — always "By Pattern" (By Time removed)
+                html.Div(id="lbl-boxmode", style={"display":"none"}),
+                dcc.Store(id="box-mode", data="pattern"),
             ], width=3),
             dbc.Col([
                 html.Label(id="lbl-refresh", children="Auto-Refresh", className="text-warning fw-bold mb-1"),
