@@ -639,7 +639,7 @@ def suggest_small_tf(big_tf_name, current_small):
     big_interval = TF_BIG_OPTIONS.get(big_tf_name, ("1d",""))[0]
     small_interval = TF_SMALL_OPTIONS.get(current_small, ("1h",""))[0]
     # Prevent small >= big
-    order = ["1d","4h","1h","15m","5m","1m"]
+    order = ["1mo","1wk","1d","4h","1h","15m","5m","1m"]
     big_idx   = order.index(big_interval)   if big_interval   in order else 0
     small_idx = order.index(small_interval) if small_interval in order else 2
     if small_idx <= big_idx:
