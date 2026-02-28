@@ -1,9 +1,9 @@
 numpy>=1.24
 pandas>=2.0
-plotly>=5.18
+plotly>=5.18,<6.0
 scipy>=1.11
-dash>=2.14
-dash-bootstrap-components>=1.5
+dash>=2.14,<4.0
+dash-bootstrap-components>=1.5,<2.0
 yfinance>=0.2.36
 requests>=2.31
 certifi>=2024.0
