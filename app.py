@@ -1,4 +1,4 @@
-worked good 😏
+# worked good 😏
 """
 app.py — Pattern Recognition System
 Run: python app.py → http://127.0.0.1:8050
