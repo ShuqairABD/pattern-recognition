@@ -667,8 +667,7 @@ def select_instrument(*args):
     State("selected-symbol","data"),
     State("tf-selector","value"),
     State("tf-small-selector","value"),
-    # State("box-mode","value"),
-    State("box-mode","data"),
+    State("box-mode","value"),
     State("page-lang","data"),
     prevent_initial_call=True
 )
