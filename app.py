@@ -1,4 +1,4 @@
-# worked good 😏
+# worked good 2 😏
 """
 app.py — Pattern Recognition System
 Run: python app.py → http://127.0.0.1:8050
@@ -69,7 +69,6 @@ TF_BIG_OPTIONS = {
 }
 
 # Small TF options: label → (interval, period)
-# Periods chosen to give ~300-500 bars for pattern detection
 TF_SMALL_OPTIONS = {
     "4 Hours":  ("4h",  "90d"),
     "1 Hour":   ("1h",  "30d"),
@@ -87,7 +86,7 @@ TF_DEFAULT_SMALL = {
     "5 Min":   "1 Min",
 }
 
-# Keep for backward compat in places that need (tf_big, period_big, tf_small, period_small)
+# Keep for backward compat
 TF_OPTIONS = {
     "1 Day":   ("1d",  "2y",  "1h",  "60d"),
     "4 Hours": ("4h",  "60d", "1h",  "14d"),
@@ -105,7 +104,6 @@ TF_PARAMS = {
     "1m":  dict(smooth_window=5,  min_ext_dist=2, lambda1=0.60, lambda2=0.45, quality_thresh=0.38),
 }
 
-# Minutes per bar for each TF — used for time-correct box sizing
 TF_MINUTES = {
     "1m":   1,
     "5m":   5,
@@ -128,12 +126,10 @@ REFRESH_OPTIONS = {
     "5 min":  300_000,
 }
 
-# Will be loaded dynamically from OpenRouter
 AI_MODELS_DEFAULT = [
     {"label": "-- Press 'Load Models' first --", "value": "none"},
 ]
 
-# Variant A: Preset analysis modes
 AI_PRESET_MODES = [
     {"label": "🎯 Find Entry Point",     "value": "entry"},
     {"label": "📊 Market Overview",      "value": "overview"},
@@ -142,7 +138,6 @@ AI_PRESET_MODES = [
     {"label": "✍️ Custom Question",      "value": "custom"},
 ]
 
-# Variant B: System prompt presets (trading style)
 AI_SYSTEM_PRESETS = [
     {"label": "🎯 Trend Follower",       "value": "trend"},
     {"label": "⚡ Scalper",              "value": "scalper"},
@@ -246,7 +241,6 @@ AI_SYSTEM_PROMPTS_AR = {
     ),
 }
 
-# ── Page translations ─────────────────────────────────────
 TR = {
     "en": {
         "title":        "📊 Pattern Recognition System",
@@ -310,7 +304,7 @@ TR = {
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 app.title = "Pattern Recognition"
-server = app.server  # needed for gunicorn / Render
+server = app.server
 
 GROUP_ICONS = {"Crypto":"🪙","Stocks":"📈","Forex":"💱","Commodities":"🛢️"}
 
@@ -337,12 +331,13 @@ app.layout = dbc.Container([
     dcc.Interval(id="auto-refresh", interval=999_999_999, disabled=True, n_intervals=0),
     dcc.Store(id="selected-symbol", data="GC=F"),
     dcc.Store(id="page-lang", data="en"),
+    dcc.Store(id="tf-big-store", data="1 Day"),
+    dcc.Store(id="tf-small-store", data="1 Hour"),
 
     dbc.Row([
         dbc.Col(html.H3(id="ui-title", children="📊 Pattern Recognition System",
                         className="text-light my-2"), width=8),
         dbc.Col([
-                # Language buttons hidden for now
                 html.Div(id="btn-lang-en", style={"display":"none"}),
                 html.Div(id="btn-lang-ar", style={"display":"none"}),
             ], width=2),
@@ -351,14 +346,12 @@ app.layout = dbc.Container([
     ]),
 
     dbc.Card([dbc.CardBody([
-        # Row 1: Instruments
         dbc.Row([
             dbc.Col([
                 html.Label(id="lbl-instrument", children="Instrument", className="text-warning fw-bold mb-1"),
                 make_instrument_panel(),
             ], width=12),
         ], className="mb-2"),
-        # Row 2: Settings
         dbc.Row([
             dbc.Col([
                 html.Label(id="lbl-timeframe", children="Big TF (Mother)", className="text-warning fw-bold mb-1"),
@@ -373,7 +366,6 @@ app.layout = dbc.Container([
                     value="1 Hour", inline=True, className="text-light small"),
             ], width=5),
             dbc.Col([
-                # Box Mode — always "By Pattern" (By Time removed)
                 html.Div(id="lbl-boxmode", style={"display":"none"}),
                 dcc.Store(id="box-mode", data="pattern"),
             ], width=3),
@@ -435,14 +427,12 @@ app.layout = dbc.Container([
         id="report-collapse", is_open=False
     ),
 
-    # ── AI Analysis Panel ──────────────────────────────────
     dbc.Card([
         dbc.CardHeader([
             html.Span(id="ai-panel-title", children="🤖 AI Analysis  ", className="text-warning fw-bold"),
             html.Small(id="ai-panel-sub", children="Vision + Data → OpenRouter", className="text-secondary"),
         ], className="bg-dark py-2"),
         dbc.CardBody([
-            # Row 1: Key + Model + Language
             dbc.Row([
                 dbc.Col([
                     html.Label(id="lbl-apikey", children="OpenRouter API Key", className="text-warning small fw-bold mb-1"),
@@ -475,7 +465,6 @@ app.layout = dbc.Container([
                 ], width=4),
             ], className="mb-2 align-items-end"),
 
-            # Row 2: Variant A — Preset mode + Variant B — System prompt + Run button
             dbc.Row([
                 dbc.Col([
                     html.Label("🎯 Analysis Mode", className="text-success small fw-bold mb-1"),
@@ -502,7 +491,6 @@ app.layout = dbc.Container([
                 ], width=4),
             ], className="mb-2 align-items-end"),
 
-            # Row 3: Custom question (shown only when mode=custom)
             dbc.Collapse(
                 dbc.Row([
                     dbc.Col([
@@ -517,7 +505,6 @@ app.layout = dbc.Container([
                 id="custom-question-collapse", is_open=False
             ),
 
-            # Response area
             dbc.Spinner([
                 dbc.Alert(id="ai-response",
                     children=html.Div(
@@ -534,9 +521,6 @@ app.layout = dbc.Container([
 ], fluid=True, id="main-container", className="bg-dark min-vh-100 px-4 pb-4")
 
 
-# ══════════════════════════════════════════════════════════
-# PAGE LANGUAGE CALLBACK
-# ══════════════════════════════════════════════════════════
 @app.callback(
     Output("page-lang",        "data"),
     Output("main-container",   "style"),
@@ -582,8 +566,7 @@ def switch_language(n_en, n_ar, current_lang):
         "textAlign": "right" if t["dir"] == "rtl" else "left",
     }
     return (
-        lang,
-        container_style,
+        lang, container_style,
         t["title"], t["subtitle"],
         t["instrument"], t["timeframe"],
         t["box_mode"], t["auto_refresh"],
@@ -617,7 +600,24 @@ def set_refresh(choice):
     return ms, False, f"⟳ every {ms//1000} sec"
 
 
-# ── Auto-suggest small TF when big TF changes ─────────────
+@app.callback(
+    Output("tf-big-store", "data"),
+    Input("tf-selector", "value"),
+    prevent_initial_call=True
+)
+def save_tf_big(value):
+    return value
+
+
+@app.callback(
+    Output("tf-small-store", "data"),
+    Input("tf-small-selector", "value"),
+    prevent_initial_call=True
+)
+def save_tf_small(value):
+    return value
+
+
 @app.callback(
     Output("tf-small-selector", "value"),
     Input("tf-selector", "value"),
@@ -626,10 +626,8 @@ def set_refresh(choice):
 )
 def suggest_small_tf(big_tf_name, current_small):
     suggested = TF_DEFAULT_SMALL.get(big_tf_name, "1 Hour")
-    # Only change if current small TF is not compatible
     big_interval = TF_BIG_OPTIONS.get(big_tf_name, ("1d",""))[0]
     small_interval = TF_SMALL_OPTIONS.get(current_small, ("1h",""))[0]
-    # Prevent small >= big
     order = ["1d","4h","1h","15m","5m","1m"]
     big_idx   = order.index(big_interval)   if big_interval   in order else 0
     small_idx = order.index(small_interval) if small_interval in order else 2
@@ -667,12 +665,20 @@ def select_instrument(*args):
     State("selected-symbol","data"),
     State("tf-selector","value"),
     State("tf-small-selector","value"),
-    State("box-mode","value"),
+    State("tf-big-store","data"),
+    State("tf-small-store","data"),
+    State("box-mode","data"),
     State("page-lang","data"),
     prevent_initial_call=True
 )
-def run_analysis(n1, n2, n_auto, symbol, tf_name, tf_small_name, box_mode, page_lang):
+def run_analysis(n1, n2, n_auto, symbol, tf_name, tf_small_name, tf_big_stored, tf_small_stored, box_mode, page_lang):
+    # Use stored values as fallback if RadioItems lost state
+    if not tf_name or tf_name not in TF_BIG_OPTIONS:
+        tf_name = tf_big_stored or "1 Day"
+    if not tf_small_name or tf_small_name not in TF_SMALL_OPTIONS:
+        tf_small_name = tf_small_stored or "1 Hour"
     page_lang  = page_lang or "en"
+    box_mode   = box_mode  or "pattern"
     tf_big,    period_big   = TF_BIG_OPTIONS.get(tf_name,   ("1d", "2y"))
     tf_small,  period_small = TF_SMALL_OPTIONS.get(tf_small_name, ("1h", "14d"))
     try:
@@ -700,7 +706,6 @@ def run_analysis(n1, n2, n_auto, symbol, tf_name, tf_small_name, box_mode, page_
     pos = _box_by_time(pb, ps, tf_big, tf_small) if box_mode=="time" else _box_by_pattern(pb, rb, ps, tf_big, tf_small)
     fig = _build_chart(symbol, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode)
 
-    # Historical similarity analysis
     hist_matches, hist_current = _find_similar_history(pb, rb)
     hist_text = _history_report(hist_matches, hist_current, lang=page_lang) if hist_current else ""
 
@@ -733,7 +738,6 @@ def run_analysis(n1, n2, n_auto, symbol, tf_name, tf_small_name, box_mode, page_
 
 
 def _translate_report_ar(report):
-    """Translate the ASCII pattern report to Arabic"""
     replacements = [
         ("PATTERN RECOGNITION REPORT",  "تقرير التعرف على الأنماط"),
         ("Total bars analysed",          "إجمالي الأشرطة المحللة"),
@@ -759,12 +763,9 @@ def _translate_report_ar(report):
 def _box_by_time(pb, ps, tf_big="1h", tf_small="15m"):
     n_big   = len(pb)
     n_small = len(ps)
-    # Convert small TF bar count to equivalent big TF bars (time-correct)
     min_big   = TF_MINUTES.get(tf_big,   60)
     min_small = TF_MINUTES.get(tf_small, 15)
-    # How many big bars equal the same time span as n_small small bars?
     n_small_in_big = int(n_small * min_small / min_big)
-    # Cap: box never > 40% of big TF, never < 10 bars
     ratio = min(n_small_in_big / max(n_big, 1), 0.40)
     ratio = max(ratio, 10 / max(n_big, 1))
     b0 = max(0, int(n_big * (1 - ratio))); b1 = n_big - 1
@@ -779,7 +780,6 @@ def _box_by_time(pb, ps, tf_big="1h", tf_small="15m"):
 def _box_by_pattern(pb, rb, ps, tf_big="1h", tf_small="15m"):
     n_big=len(pb); n_small=len(ps)
     cur_bar=n_big-1; cur_price=float(pb[-1])
-    # Convert small TF bar count to equivalent big TF bars (time-correct)
     min_big   = TF_MINUTES.get(tf_big,   60)
     min_small = TF_MINUTES.get(tf_small, 15)
     n_small_in_big = int(n_small * min_small / min_big)
@@ -831,18 +831,12 @@ def _make_alert(pos, tf_big, tf_small, symbol, box_mode):
             f"Price: {price:,.2f}  ({pos.get('method','')})"), color
 
 
-HIST_COLOR = "#A855F7"   # purple — similar past structures
+HIST_COLOR = "#A855F7"
 
 def _find_similar_history(pb, rb, min_bars_after=10):
-    """
-    Find past W1W2W3 structures similar to the LAST valid structure.
-    Similarity: |R_past - R_cur| < 0.15  AND  |S_past - S_cur| < 0.20
-    Returns list of dicts with past structure info + what happened after.
-    Minimum min_bars_after bars must exist after the structure to measure outcome.
-    """
     valid = [t for t in rb["triples"] if t.is_valid]
     if len(valid) < 2:
-        return [], None   # need at least 1 past + 1 current
+        return [], None
 
     current = valid[-1]
     R_cur = current.correction_ratio
@@ -850,23 +844,20 @@ def _find_similar_history(pb, rb, min_bars_after=10):
     n     = len(pb)
 
     matches = []
-    for t in valid[:-1]:   # all except the last (current)
+    for t in valid[:-1]:
         R_diff = abs(t.correction_ratio - R_cur)
         S_diff = abs(t.quality_score    - S_cur)
         if R_diff > 0.15 or S_diff > 0.20:
             continue
 
-        # End of past structure = end of W3
         end_idx = int(t.w3.end.index)
         if end_idx + min_bars_after >= n:
-            continue   # not enough bars after to measure
+            continue
 
-        # Measure what happened after: look ahead min_bars_after bars
         p_end   = float(pb[end_idx])
         p_after = float(pb[min(end_idx + min_bars_after, n-1)])
         pct_chg = (p_after - p_end) / p_end * 100
 
-        # Also find max/min in lookahead window
         window = pb[end_idx : min(end_idx + min_bars_after*2, n)]
         p_max  = float(np.max(window))
         p_min  = float(np.min(window))
@@ -888,7 +879,6 @@ def _find_similar_history(pb, rb, min_bars_after=10):
 
 
 def _history_report(matches, current, lang="en"):
-    """Build text summary of historical similarity analysis."""
     if not matches:
         return ""
     n      = len(matches)
@@ -959,16 +949,13 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
     _add_layer(fig, 1, pb, rb, tf_big)
     _add_layer(fig, 2, ps, rs, tf_small)
 
-    # ── Historical similarity markers (purple) ─────────────
     hist_matches, hist_current = _find_similar_history(pb, rb)
     for i, m in enumerate(hist_matches):
         x0 = m["w1_start"]; x1 = m["w3_end"]
-        p0 = m["w1_start_price"]; p1 = m["w3_end_price"]
         pmin = float(np.min(pb[x0:x1+1])); pmax = float(np.max(pb[x0:x1+1]))
         pad  = (pmax - pmin) * 0.04
         arrow = "📈" if m["went_up"] else "📉"
         pct   = m["pct_chg"]
-        # Shaded zone for past structure
         fig.add_trace(go.Scatter(
             x=[x0, x1, x1, x0, x0],
             y=[pmin-pad, pmin-pad, pmax+pad, pmax+pad, pmin-pad],
@@ -979,7 +966,6 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
             showlegend=(i==0),
             hoverinfo="skip",
         ), row=1, col=1)
-        # Label: what happened after
         fig.add_annotation(
             x=x1, y=pmax+pad,
             text=f"<b>{arrow}{pct:+.1f}%</b>",
@@ -995,7 +981,6 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
     cur_bar=pos["cur_bar"]; cur_price=pos["cur_price"]
     pad=(bmax-bmin)*0.04; y0=bmin-pad; y1=bmax+pad
 
-    # Box via closed Scatter
     fig.add_trace(go.Scatter(
         x=[z0,z1,z1,z0,z0], y=[y0,y0,y1,y1,y0],
         mode="lines", line=dict(color=wcolor,width=3),
@@ -1006,14 +991,12 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
         fig.add_trace(go.Scatter(x=[xv,xv],y=[y0,y1],mode="lines",showlegend=False,
             line=dict(color=wcolor,width=1.5,dash="dash"),hoverinfo="skip"), row=1, col=1)
 
-    # Current price dot
     fig.add_trace(go.Scatter(x=[cur_bar],y=[cur_price],
         mode="markers+text",
         marker=dict(size=14,color=wcolor,line=dict(color="#FFF",width=2)),
         text=[f"  ◄ {cur_price:,.0f}"],textposition="middle right",
         textfont=dict(color="#FFF",size=11),showlegend=False), row=1, col=1)
 
-    # Label above box
     mid_x=(z0+z1)/2
     fig.add_annotation(x=mid_x,y=y1,
         text=f"<b>🔍 YOU ARE HERE<br>{pos.get('label',wname)}</b>",
@@ -1021,7 +1004,6 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
         ax=0,ay=-50,font=dict(size=11,color=wcolor),
         bgcolor="#1A1A2E",bordercolor=wcolor,borderwidth=2,row=1,col=1)
 
-    # Entry signal
     if pos.get("entry_signal") and box_mode=="pattern":
         fig.add_trace(go.Scatter(x=[cur_bar],y=[cur_price],mode="markers",
             marker=dict(size=22,color="rgba(255,68,68,0.25)",symbol="circle",
@@ -1033,20 +1015,17 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
             ax=70,ay=-50,font=dict(size=11,color="#FF4444"),
             bgcolor="#1A1A2E",bordercolor="#FF4444",borderwidth=2,row=1,col=1)
 
-    # Current bar line
     fig.add_trace(go.Scatter(x=[cur_bar,cur_bar],
         y=[float(np.min(pb))*0.995,float(np.max(pb))*1.005],
         mode="lines",showlegend=False,hoverinfo="skip",
         line=dict(color="rgba(255,255,255,0.4)",width=1.5,dash="dot")), row=1, col=1)
 
-    # Label on small TF
     fig.add_annotation(x=0.99,y=0.97,xref="x2 domain",yref="y2 domain",
         xanchor="right",yanchor="top",
         text=f"<b>⬆️ Zoom of [{wname}] ({mode_label})</b>",
         showarrow=False,font=dict(size=11,color=wcolor),
         bgcolor="#1A1A2E",bordercolor=wcolor,borderwidth=2)
 
-    # ── 4 PHASE POINTS — always last 4 waves (right edge) ──
     all_waves_small = rs["waves"]
     n_ps = len(ps)
     if len(all_waves_small) >= 4:
@@ -1069,16 +1048,13 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
                 bgcolor="#1A1A2E", bordercolor="#FFD700", borderwidth=1,
                 row=2, col=1)
 
-    # Auto-zoom small TF — show exactly the time window of the big TF box
     n_big   = len(pb)
     n_small = len(ps)
     min_big   = TF_MINUTES.get(tf_big,   60)
     min_small = TF_MINUTES.get(tf_small, 15)
-    # Box covers (z1-z0) big bars → convert to small bars
     box_big_bars   = max(z1 - z0, 1)
     box_minutes    = box_big_bars * min_big
     box_small_bars = int(box_minutes / min_small)
-    # Add 10% padding on each side, minimum 40 bars
     pad_s  = max(int(box_small_bars * 0.10), 10)
     s_bars = box_small_bars + 2 * pad_s
     s_bars = max(s_bars, 40)
@@ -1092,7 +1068,6 @@ def _build_chart(sym, tf_big, tf_small, pb, rb, ps, rs, frac, pos, box_mode):
             vpct = max((vmax - vmin) * 0.08, vmin * 0.0005)
             fig.update_yaxes(range=[vmin - vpct, vmax + vpct], row=2, col=1)
 
-    # Amplitudes
     wb,ws2=rb["waves"],rs["waves"]
     if wb:
         fig.add_trace(go.Bar(x=[f"B{w.idx+1}" for w in wb],y=[w.amplitude for w in wb],
@@ -1183,13 +1158,12 @@ def _add_layer(fig, row, prices, res, tf):
 
 
 def _load(symbol, period, interval):
-    # Retry up to 3 times — Yahoo Finance sometimes blocks first request from server
     import time
     last_err = None
     for attempt in range(3):
         try:
             if attempt > 0:
-                time.sleep(2 * attempt)  # wait 2s, 4s before retries
+                time.sleep(2 * attempt)
             ticker = yf.Ticker(symbol)
             df = ticker.history(period=period, interval=interval, auto_adjust=True)
             if df.empty:
@@ -1225,7 +1199,7 @@ def _error_fig(msg):
 def toggle_report(n, is_open):
     return not is_open
 
-# ── Show/hide custom question field ───────────────────────
+
 @app.callback(
     Output("custom-question-collapse", "is_open"),
     Input("ai-preset-mode", "value"),
@@ -1235,9 +1209,6 @@ def toggle_custom_question(mode):
     return mode == "custom"
 
 
-# ══════════════════════════════════════════════════════════
-# LOAD FREE MODELS FROM OPENROUTER
-# ══════════════════════════════════════════════════════════
 @app.callback(
     Output("ai-model",       "options"),
     Output("ai-model",       "value"),
@@ -1267,14 +1238,12 @@ def load_models(n_clicks, api_key):
             pricing = m.get("pricing", {})
             prompt_price = float(pricing.get("prompt","1") or "1")
             if prompt_price > 0:
-                continue  # skip paid
-            # check vision from OpenRouter data (reliable)
+                continue
             arch = m.get("architecture", {})
             inp  = arch.get("input_modalities", []) or arch.get("modalities",{}).get("input",[])
             has_vision = "image" in str(inp).lower()
             name = m.get("name", mid)
             label = f"👁 {name}" if has_vision else f"📝 {name}"
-            # Encode vision flag into value: "modelid|vision" or "modelid|text"
             val = f"{mid}|vision" if has_vision else f"{mid}|text"
             entry = {"label": label, "value": val}
             if has_vision:
@@ -1301,9 +1270,6 @@ def load_models(n_clicks, api_key):
         return AI_MODELS_DEFAULT, "none", f"Error: {str(e)[:60]}"
 
 
-# ══════════════════════════════════════════════════════════
-# AI ANALYSIS CALLBACK
-# ══════════════════════════════════════════════════════════
 @app.callback(
     Output("ai-response", "children"),
     Output("ai-response", "color"),
@@ -1346,17 +1312,15 @@ def _ai_analyse_inner(figure, api_key, model, lang,
 
     tf_big,   period_big   = TF_BIG_OPTIONS.get(tf_name,   ("1d","2y"))
     tf_small, period_small = TF_SMALL_OPTIONS.get(tf_small_name, ("1h","14d"))
-    # Decode model id and vision flag (format: "modelid|vision" or "modelid|text")
+
     if "|" in (model or ""):
         model_id, vision_flag = model.rsplit("|", 1)
         is_vision = (vision_flag == "vision")
     else:
         model_id  = model or ""
         is_vision = any(x in model_id for x in ["vision","gemini","vl","llava"])
-    model = model_id  # use clean model id for API call
+    model = model_id
 
-    # 1. Chart -> PNG base64
-    # On cloud servers (Render etc.) kaleido needs chromium — skip if unavailable
     img_content = []
     vision_status = "no"
     if is_vision:
@@ -1373,7 +1337,6 @@ def _ai_analyse_inner(figure, api_key, model, lang,
             is_vision = False
             vision_status = f"no (kaleido: {str(kaleido_err)[:60]})"
 
-    # 2. Extract annotations from chart
     annot_lines = []
     if figure and "layout" in figure:
         for a in figure["layout"].get("annotations", [])[:20]:
@@ -1383,173 +1346,88 @@ def _ai_analyse_inner(figure, api_key, model, lang,
                 annot_lines.append(f"  - {clean}")
     annot_text = "\n".join(annot_lines) if annot_lines else "  - see image"
 
-    # 3. Build system prompt (trading style)
     preset_mode   = preset_mode   or "overview"
     system_preset = system_preset or "trend"
     custom_question = custom_question or ""
 
     if lang == "ru":
-        sys_prompt = AI_SYSTEM_PROMPTS_RU.get(system_preset,
-                     AI_SYSTEM_PROMPTS_RU["trend"])
+        sys_prompt = AI_SYSTEM_PROMPTS_RU.get(system_preset, AI_SYSTEM_PROMPTS_RU["trend"])
     elif lang == "ar":
-        sys_prompt = AI_SYSTEM_PROMPTS_AR.get(system_preset,
-                     AI_SYSTEM_PROMPTS_AR["trend"])
+        sys_prompt = AI_SYSTEM_PROMPTS_AR.get(system_preset, AI_SYSTEM_PROMPTS_AR["trend"])
     else:
-        sys_prompt = AI_SYSTEM_PROMPTS.get(system_preset,
-                     AI_SYSTEM_PROMPTS["trend"])
+        sys_prompt = AI_SYSTEM_PROMPTS.get(system_preset, AI_SYSTEM_PROMPTS["trend"])
 
-    # Build mode-specific question
     if lang == "ru":
         MODE_QUESTIONS = {
-            "entry": (
-                "ЗАДАЧА: Найди лучшую точку входа прямо сейчас.\n"
-                "Укажи: направление (long/short), точную цену входа, "
-                "стоп-лосс, тейк-профит 1 и тейк-профит 2.\n"
-                "Объясни почему именно здесь."
-            ),
-            "overview": (
-                "ЗАДАЧА: Дай полный обзор рыночной ситуации.\n"
-                "Опиши: общий тренд, текущую фазу цикла, "
-                "ключевые уровни, что ожидать дальше."
-            ),
-            "risk": (
-                "ЗАДАЧА: Оцени риски текущей позиции.\n"
-                "Укажи: уровни стоп-лосс, сценарии против тренда, "
-                "какие признаки говорят об опасности, что наблюдать."
-            ),
-            "correction": (
-                "ЗАДАЧА: Проанализируй текущую коррекцию.\n"
-                "Укажи: это коррекция или разворот? Где она закончится? "
-                "Уровни поддержки для входа после коррекции."
-            ),
+            "entry": "ЗАДАЧА: Найди лучшую точку входа прямо сейчас.\nУкажи: направление (long/short), точную цену входа, стоп-лосс, тейк-профит 1 и тейк-профит 2.\nОбъясни почему именно здесь.",
+            "overview": "ЗАДАЧА: Дай полный обзор рыночной ситуации.\nОпиши: общий тренд, текущую фазу цикла, ключевые уровни, что ожидать дальше.",
+            "risk": "ЗАДАЧА: Оцени риски текущей позиции.\nУкажи: уровни стоп-лосс, сценарии против тренда, какие признаки говорят об опасности, что наблюдать.",
+            "correction": "ЗАДАЧА: Проанализируй текущую коррекцию.\nУкажи: это коррекция или разворот? Где она закончится? Уровни поддержки для входа после коррекции.",
             "custom": custom_question if custom_question else "Проанализируй график.",
         }
     elif lang == "ar":
         MODE_QUESTIONS = {
-            "entry": (
-                "المهمة: ابحث عن أفضل نقطة دخول الآن.\n"
-                "حدد: الاتجاه (شراء/بيع)، سعر الدخول، "
-                "وقف الخسارة، الهدف الأول والهدف الثاني.\n"
-                "اشرح لماذا هنا بالذات."
-            ),
-            "overview": (
-                "المهمة: أعطِ نظرة عامة كاملة على الوضع السوقي.\n"
-                "صف: الاتجاه العام، المرحلة الحالية، "
-                "المستويات الرئيسية، ماذا تتوقع لاحقاً."
-            ),
-            "risk": (
-                "المهمة: قيّم مخاطر الوضع الحالي.\n"
-                "حدد: مستويات وقف الخسارة، سيناريوهات عكس الاتجاه، "
-                "ما هي علامات الخطر، ماذا تراقب."
-            ),
-            "correction": (
-                "المهمة: حلّل التصحيح الحالي.\n"
-                "حدد: هل هو تصحيح أم انعكاس؟ أين سينتهي؟ "
-                "مستويات الدعم للدخول بعد التصحيح."
-            ),
+            "entry": "المهمة: ابحث عن أفضل نقطة دخول الآن.\nحدد: الاتجاه (شراء/بيع)، سعر الدخول، وقف الخسارة، الهدف الأول والهدف الثاني.\nاشرح لماذا هنا بالذات.",
+            "overview": "المهمة: أعطِ نظرة عامة كاملة على الوضع السوقي.\nصف: الاتجاه العام، المرحلة الحالية، المستويات الرئيسية، ماذا تتوقع لاحقاً.",
+            "risk": "المهمة: قيّم مخاطر الوضع الحالي.\nحدد: مستويات وقف الخسارة، سيناريوهات عكس الاتجاه، ما هي علامات الخطر، ماذا تراقب.",
+            "correction": "المهمة: حلّل التصحيح الحالي.\nحدد: هل هو تصحيح أم انعكاس؟ أين سينتهي؟ مستويات الدعم للدخول بعد التصحيح.",
             "custom": custom_question if custom_question else "حلل الرسم البياني.",
         }
     else:
         MODE_QUESTIONS = {
-            "entry": (
-                "TASK: Find the best entry point right now.\n"
-                "Specify: direction (long/short), exact entry price, "
-                "stop-loss, take-profit 1 and take-profit 2.\n"
-                "Explain why exactly here."
-            ),
-            "overview": (
-                "TASK: Give a full market overview.\n"
-                "Describe: overall trend, current cycle phase, "
-                "key levels, what to expect next."
-            ),
-            "risk": (
-                "TASK: Assess the risks of the current situation.\n"
-                "Specify: stop-loss levels, counter-trend scenarios, "
-                "warning signs, what to watch."
-            ),
-            "correction": (
-                "TASK: Analyse the current correction.\n"
-                "Specify: is this a correction or reversal? Where will it end? "
-                "Support levels for entry after correction."
-            ),
+            "entry": "TASK: Find the best entry point right now.\nSpecify: direction (long/short), exact entry price, stop-loss, take-profit 1 and take-profit 2.\nExplain why exactly here.",
+            "overview": "TASK: Give a full market overview.\nDescribe: overall trend, current cycle phase, key levels, what to expect next.",
+            "risk": "TASK: Assess the risks of the current situation.\nSpecify: stop-loss levels, counter-trend scenarios, warning signs, what to watch.",
+            "correction": "TASK: Analyse the current correction.\nSpecify: is this a correction or reversal? Where will it end? Support levels for entry after correction.",
             "custom": custom_question if custom_question else "Analyse the chart.",
         }
 
     mode_question = MODE_QUESTIONS.get(preset_mode, MODE_QUESTIONS["overview"])
 
-    # 3. Build prompt
     NL = "\n"
     if lang == "ru":
-        q1 = f"1. Какой тренд на {tf_big}?"
-        q2 = f"2. Где малый {tf_small} внутри большого? Красный квадрат правильно стоит?"
-        q3 = "3. Паттерны совпадают на обоих ТФ или противоречат?"
-        q4 = "4. Что делать прямо сейчас (войти/ждать/выйти)?"
-        q5 = "5. Ключевые уровни."
         prompt = NL.join([
-            sys_prompt,
-            "",
             f"Инструмент: {symbol}",
             f"Таймфреймы: {tf_big} (большой) + {tf_small} (малый)",
             f"Позиция: {position_text}",
-            "",
-            "Данные с графика:",
-            annot_text,
-            "",
-            mode_question,
-            "",
-            "Дополнительно ответь:",
-            q1, q2, q3, q4, q5,
-            "",
-            "Отвечай конкретно, используй эмодзи.",
+            "", "Данные с графика:", annot_text, "",
+            mode_question, "",
+            f"1. Какой тренд на {tf_big}?",
+            f"2. Где малый {tf_small} внутри большого?",
+            "3. Паттерны совпадают на обоих ТФ?",
+            "4. Что делать прямо сейчас?",
+            "5. Ключевые уровни.",
+            "", "Отвечай конкретно, используй эмодзи.",
         ])
     elif lang == "ar":
-        q1 = f"1. ما هو الاتجاه على {tf_big}?"
-        q2 = f"2. أين يقع {tf_small} الصغير داخل الكبير؟ هل الإطار الأحمر في المكان الصحيح؟"
-        q3 = "3. هل الأنماط على كلا الإطارين الزمنيين متوافقة أم متعارضة؟"
-        q4 = "4. ماذا تفعل الآن؟ (دخول/انتظار/خروج)"
-        q5 = "5. المستويات الرئيسية."
         prompt = NL.join([
-            sys_prompt,
-            "",
             f"الأداة: {symbol}",
             f"الإطارات الزمنية: {tf_big} (كبير) + {tf_small} (صغير)",
             f"الموقع الحالي: {position_text}",
-            "",
-            "بيانات من الرسم البياني:",
-            annot_text,
-            "",
-            mode_question,
-            "",
-            "أجب أيضاً على:",
-            q1, q2, q3, q4, q5,
-            "",
-            "كن محدداً واستخدم الرموز التعبيرية.",
+            "", "بيانات من الرسم البياني:", annot_text, "",
+            mode_question, "",
+            f"1. ما هو الاتجاه على {tf_big}?",
+            f"2. أين يقع {tf_small} الصغير داخل الكبير؟",
+            "3. هل الأنماط متوافقة؟",
+            "4. ماذا تفعل الآن؟",
+            "5. المستويات الرئيسية.",
+            "", "كن محدداً واستخدم الرموز التعبيرية.",
         ])
     else:
-        q1 = f"1. What is the trend on {tf_big}?"
-        q2 = f"2. Where is small TF {tf_small} inside big TF? Is the red box correct?"
-        q3 = "3. Do patterns on both TFs confirm or contradict each other?"
-        q4 = "4. What to do right now (enter/wait/exit)?"
-        q5 = "5. Key price levels."
         prompt = NL.join([
-            sys_prompt,
-            "",
             f"Instrument: {symbol}",
             f"Timeframes: {tf_big} (big) + {tf_small} (small)",
             f"Position: {position_text}",
-            "",
-            "Chart data:",
-            annot_text,
-            "",
-            mode_question,
-            "",
-            "Also answer:",
-            q1, q2, q3, q4, q5,
-            "",
-            "Be specific, use emojis.",
+            "", "Chart data:", annot_text, "",
+            mode_question, "",
+            f"1. What is the trend on {tf_big}?",
+            f"2. Where is small TF {tf_small} inside big TF?",
+            "3. Do patterns on both TFs confirm each other?",
+            "4. What to do right now?",
+            "5. Key price levels.",
+            "", "Be specific, use emojis.",
         ])
 
-    # 4. Call OpenRouter
     user_content = img_content + [{"type":"text","text":prompt}]
     try:
         resp = requests.post(
@@ -1580,30 +1458,24 @@ def _ai_analyse_inner(figure, api_key, model, lang,
         used_mdl = data.get("model", model)
 
         is_ar = (lang == "ar")
-        mode_label = next((m["label"] for m in AI_PRESET_MODES if m["value"]==preset_mode), "")
+        mode_label  = next((m["label"] for m in AI_PRESET_MODES   if m["value"]==preset_mode),  "")
         style_label = next((m["label"] for m in AI_SYSTEM_PRESETS if m["value"]==system_preset), "")
         result = [
             html.Div([
                 html.Span("🤖 ", style={"fontSize":"18px"}),
                 html.Span("AI Analysis  ", className="fw-bold text-primary"),
-                html.Span(f"({used_mdl})", className="text-secondary",
-                          style={"fontSize":"11px"}),
-                html.Span(f"  |  {mode_label}  |  {style_label}",
-                          className="text-success",
-                          style={"fontSize":"11px"}),
-                html.Span(f"  |  vision={vision_status}",
-                          className="text-secondary", style={"fontSize":"11px"}),
-            ], className="mb-2 pb-1 border-bottom border-secondary",
-               style={"direction":"ltr"}),
-            html.Div(ai_text,
-                     style={
-                         "whiteSpace": "pre-wrap",
-                         "lineHeight": "1.8",
-                         "fontSize":   "14px",
-                         "direction":  "rtl" if is_ar else "ltr",
-                         "textAlign":  "right" if is_ar else "left",
-                         "fontFamily": "Segoe UI, Tahoma, Arial, sans-serif",
-                     }),
+                html.Span(f"({used_mdl})", className="text-secondary", style={"fontSize":"11px"}),
+                html.Span(f"  |  {mode_label}  |  {style_label}", className="text-success", style={"fontSize":"11px"}),
+                html.Span(f"  |  vision={vision_status}", className="text-secondary", style={"fontSize":"11px"}),
+            ], className="mb-2 pb-1 border-bottom border-secondary", style={"direction":"ltr"}),
+            html.Div(ai_text, style={
+                "whiteSpace": "pre-wrap",
+                "lineHeight": "1.8",
+                "fontSize":   "14px",
+                "direction":  "rtl" if is_ar else "ltr",
+                "textAlign":  "right" if is_ar else "left",
+                "fontFamily": "Segoe UI, Tahoma, Arial, sans-serif",
+            }),
         ]
         return result, "dark"
 
@@ -1611,7 +1483,6 @@ def _ai_analyse_inner(figure, api_key, model, lang,
         return "Timeout (90s). Try a faster model or check connection.", "warning"
     except Exception as e:
         return f"Error: {str(e)}", "danger"
-
 
 
 if __name__ == "__main__":
@@ -1630,7 +1501,7 @@ if __name__ == "__main__":
 
 
 
-
+# # worked good 😏
 # """
 # app.py — Pattern Recognition System
 # Run: python app.py → http://127.0.0.1:8050
@@ -2743,16 +2614,6 @@ if __name__ == "__main__":
 #         showarrow=False,bgcolor="#1A1A2E",bordercolor="#4361EE",borderwidth=1,
 #         font=dict(size=10,color="#E0E0FF"))
 
-#     # Small TF self-similarity coefficient (small vs small waves)
-#     frac_s = sb.fractal.self_similarity(rs["waves"], rs["waves"])
-#     coeff_s = frac_s["coefficient"]
-#     stab_s  = "Stable ✅" if frac_s["stable"] else "Unstable ⚠️"
-#     lbl_s   = f"Small TF coeff = {coeff_s:.4f}" if coeff_s else "Small TF: not enough waves"
-#     fig.add_annotation(xref="x3 domain",yref="y3 domain",x=0.01,y=0.95,
-#         xanchor="left",yanchor="top",text=f"<b>{lbl_s} | {stab_s}</b>",
-#         showarrow=False,bgcolor="#1A1A2E",bordercolor="#F72585",borderwidth=1,
-#         font=dict(size=10,color="#F72585"))
-
 #     fig.update_layout(template="plotly_dark",height=960,barmode="group",
 #         paper_bgcolor="#1A1A2E",plot_bgcolor="#1A1A2E",
 #         title=dict(text=(f"<b>{sym}</b>  —  Pattern Recognition  "
@@ -3262,3 +3123,14 @@ if __name__ == "__main__":
 #     print("  Open browser: http://127.0.0.1:8050")
 #     print("="*50 + "\n")
 #     app.run(debug=False, port=8050)
+
+
+
+
+
+
+
+
+
+
+
